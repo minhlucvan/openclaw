@@ -1,9 +1,9 @@
 {
-  "name": "@moltbot/mezon",
+  "name": "@openclaw/mezon",
   "version": "2026.1.27-beta.1",
   "type": "module",
-  "description": "Moltbot Mezon channel plugin",
-  "moltbot": {
+  "description": "OpenClaw Mezon channel plugin",
+  "openclaw": {
     "extensions": [
       "./index.ts"
     ],
@@ -17,13 +17,13 @@
       "order": 66
     },
     "install": {
-      "npmSpec": "@moltbot/mezon",
+      "npmSpec": "@openclaw/mezon",
       "localPath": "extensions/mezon",
       "defaultChoice": "npm"
     }
   },
   "dependencies": {
-    "moltbot": "workspace:*",
+    "openclaw": "workspace:*",
     "mezon-sdk": "^2.8.0"
   }
 }

@@ -9,14 +9,14 @@ Status: experimental (plugin). Supports clans, channels, DMs, and threads via th
 
 ## Plugin required
 Mezon ships as a plugin and is not bundled with the core install.
-- Install via CLI: `moltbot plugins install @moltbot/mezon`
+- Install via CLI: `openclaw plugins install @openclaw/mezon`
 - Or select **Mezon** during onboarding and confirm the install prompt
 - Details: [Plugins](/plugin)
 
 ## Quick setup (beginner)
 1) Install the Mezon plugin:
-   - From a source checkout: `moltbot plugins install ./extensions/mezon`
-   - From npm (if published): `moltbot plugins install @moltbot/mezon`
+   - From a source checkout: `openclaw plugins install ./extensions/mezon`
+   - From npm (if published): `openclaw plugins install @openclaw/mezon`
    - Or pick **Mezon** in onboarding and confirm the install prompt
 2) Set the token:
    - Env: `MEZON_TOKEN=...`
@@ -98,8 +98,8 @@ Multi-account support: use `channels.mezon.accounts` with per-account tokens and
 ### DM access
 - Default: `channels.mezon.dmPolicy = "pairing"`. Unknown senders receive a pairing code; messages are ignored until approved.
 - Approve via:
-  - `moltbot pairing list mezon`
-  - `moltbot pairing approve mezon <CODE>`
+  - `openclaw pairing list mezon`
+  - `openclaw pairing approve mezon <CODE>`
 - Pairing is the default token exchange. Details: [Pairing](/start/pairing)
 - `channels.mezon.allowFrom` accepts user IDs or usernames (with or without `@` prefix).
 - Policies: `pairing` (default), `allowlist`, `open`, `disabled`.
@@ -166,7 +166,7 @@ Multi-account support: use `channels.mezon.accounts` with per-account tokens and
 - `@<id>` or `mezon:<id>` — send a DM to a user.
 - `#<id>` — send to a channel.
 - Plain ID defaults to channel.
-- Example: `moltbot message send --channel mezon --target user:12345abc --message "hi"`.
+- Example: `openclaw message send --channel mezon --target user:12345abc --message "hi"`.
 
 **How to find IDs:** Check the gateway logs on inbound messages — each log entry includes the sender's user ID and the channel/thread ID. You can also use Mezon's app developer tools (if available) to inspect channel and user IDs.
 
@@ -200,10 +200,10 @@ Each account starts independently with its own token and configuration. Account-
 ## Troubleshooting
 
 **Bot doesn't respond:**
-- Check that the token is valid: `moltbot channels status --probe`
+- Check that the token is valid: `openclaw channels status --probe`
 - Verify the sender is approved (pairing or allowFrom)
 - Ensure the bot has been added to the clan/channel
-- Check gateway logs: `moltbot logs --follow`
+- Check gateway logs: `openclaw logs --follow`
 
 **Bot ignores group messages:**
 - Verify `requireMention` is true and you are @mentioning the bot
@@ -215,16 +215,16 @@ Each account starts independently with its own token and configuration. Account-
 - Check gateway logs for media download errors
 
 **Pairing codes not working:**
-- Pairing codes expire after 1 hour. Reissue with `moltbot pairing list mezon` and share the new code.
+- Pairing codes expire after 1 hour. Reissue with `openclaw pairing list mezon` and share the new code.
 - Ensure the user is sending the code as a DM to the bot, not in a group channel.
 
 **Bot connected but no messages arrive:**
 - Verify the bot has been added to the clan. The bot must be a member of the clan and have access to the target channel.
-- Check gateway logs for SDK login confirmation: `moltbot logs --follow` and look for the "Mezon logged in" entry.
+- Check gateway logs for SDK login confirmation: `openclaw logs --follow` and look for the "Mezon logged in" entry.
 - If the bot logged in but messages are missing, confirm the channel type matches expectations (DM vs. group vs. thread).
 
 **Duplicate messages:**
-- The dedup cache holds up to 2000 messages with a 5-minute TTL. If you see duplicates, check `moltbot logs` for cache-miss entries — this can happen if the gateway restarted and the cache was cleared.
+- The dedup cache holds up to 2000 messages with a 5-minute TTL. If you see duplicates, check `openclaw logs` for cache-miss entries — this can happen if the gateway restarted and the cache was cleared.
 - Persistent duplicates may indicate the SDK is delivering the same event twice; check for multiple bot instances running with the same token.
 
 **Streaming feels delayed:**
@@ -245,7 +245,7 @@ Each account starts independently with its own token and configuration. Account-
 - To disable streaming entirely, set `blockStreaming: true`.
 
 **Token rejected on startup:**
-- Run `moltbot channels status --probe` to verify the token is valid.
+- Run `openclaw channels status --probe` to verify the token is valid.
 - Confirm the token in your config matches the one from the Mezon Developer Portal. Tokens are opaque strings — ensure no leading/trailing whitespace.
 - If using `MEZON_TOKEN` env var, verify it is exported in the shell where the gateway runs.
 

@@ -1,9 +1,9 @@
 import type {
   ChannelAccountSnapshot,
-  MoltbotConfig,
+  OpenClawConfig,
   ReplyPayload,
   RuntimeEnv,
-} from "clawdbot/plugin-sdk";
+} from "openclaw/plugin-sdk";
 import {
   createReplyPrefixContext,
   createTypingCallbacks,
@@ -16,7 +16,7 @@ import {
   resolveControlCommandGate,
   resolveChannelMediaMaxBytes,
   type HistoryEntry,
-} from "clawdbot/plugin-sdk";
+} from "openclaw/plugin-sdk";
 
 import { getMezonRuntime } from "../runtime.js";
 import { resolveMezonAccount } from "./accounts.js";
@@ -37,7 +37,7 @@ import { sendMessageMezon } from "./send.js";
 export type MonitorMezonOpts = {
   token?: string;
   accountId?: string;
-  config?: MoltbotConfig;
+  config?: OpenClawConfig;
   runtime?: RuntimeEnv;
   abortSignal?: AbortSignal;
   statusSink?: (patch: Partial<ChannelAccountSnapshot>) => void;

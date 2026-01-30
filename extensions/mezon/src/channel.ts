@@ -8,7 +8,7 @@ import {
   normalizeAccountId,
   setAccountEnabledInConfigSection,
   type ChannelPlugin,
-} from "clawdbot/plugin-sdk";
+} from "openclaw/plugin-sdk";
 
 import { MezonConfigSchema } from "./config-schema.js";
 import { resolveMezonGroupRequireMention } from "./group-mentions.js";

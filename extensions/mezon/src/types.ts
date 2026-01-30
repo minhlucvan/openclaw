@@ -1,4 +1,4 @@
-import type { BlockStreamingCoalesceConfig, DmPolicy, GroupPolicy } from "clawdbot/plugin-sdk";
+import type { BlockStreamingCoalesceConfig, DmPolicy, GroupPolicy } from "openclaw/plugin-sdk";
 
 export type MezonAccountConfig = {
   /** Optional display name for this account (used in CLI/UI lists). */

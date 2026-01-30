@@ -1,5 +1,5 @@
-import type { MoltbotConfig } from "clawdbot/plugin-sdk";
-import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "clawdbot/plugin-sdk";
+import type { OpenClawConfig } from "openclaw/plugin-sdk";
+import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "openclaw/plugin-sdk";
 
 import type { MezonAccountConfig } from "../types.js";
 
@@ -19,26 +19,26 @@ export type ResolvedMezonAccount = {
   blockStreamingCoalesce?: MezonAccountConfig["blockStreamingCoalesce"];
 };
 
-function listConfiguredAccountIds(cfg: MoltbotConfig): string[] {
+function listConfiguredAccountIds(cfg: OpenClawConfig): string[] {
   const accounts = cfg.channels?.mezon?.accounts;
   if (!accounts || typeof accounts !== "object") return [];
   return Object.keys(accounts).filter(Boolean);
 }
 
-export function listMezonAccountIds(cfg: MoltbotConfig): string[] {
+export function listMezonAccountIds(cfg: OpenClawConfig): string[] {
   const ids = listConfiguredAccountIds(cfg);
   if (ids.length === 0) return [DEFAULT_ACCOUNT_ID];
   return ids.sort((a, b) => a.localeCompare(b));
 }
 
-export function resolveDefaultMezonAccountId(cfg: MoltbotConfig): string {
+export function resolveDefaultMezonAccountId(cfg: OpenClawConfig): string {
   const ids = listMezonAccountIds(cfg);
   if (ids.includes(DEFAULT_ACCOUNT_ID)) return DEFAULT_ACCOUNT_ID;
   return ids[0] ?? DEFAULT_ACCOUNT_ID;
 }
 
 function resolveAccountConfig(
-  cfg: MoltbotConfig,
+  cfg: OpenClawConfig,
   accountId: string,
 ): MezonAccountConfig | undefined {
   const accounts = cfg.channels?.mezon?.accounts;
@@ -47,7 +47,7 @@ function resolveAccountConfig(
 }
 
 function mergeMezonAccountConfig(
-  cfg: MoltbotConfig,
+  cfg: OpenClawConfig,
   accountId: string,
 ): MezonAccountConfig {
   const { accounts: _ignored, ...base } = (cfg.channels?.mezon ??
@@ -57,7 +57,7 @@ function mergeMezonAccountConfig(
 }
 
 export function resolveMezonAccount(params: {
-  cfg: MoltbotConfig;
+  cfg: OpenClawConfig;
   accountId?: string | null;
 }): ResolvedMezonAccount {
   const accountId = normalizeAccountId(params.accountId);
@@ -88,7 +88,7 @@ export function resolveMezonAccount(params: {
   };
 }
 
-export function listEnabledMezonAccounts(cfg: MoltbotConfig): ResolvedMezonAccount[] {
+export function listEnabledMezonAccounts(cfg: OpenClawConfig): ResolvedMezonAccount[] {
   return listMezonAccountIds(cfg)
     .map((accountId) => resolveMezonAccount({ cfg, accountId }))
     .filter((account) => account.enabled);

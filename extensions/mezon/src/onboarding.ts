@@ -1,9 +1,9 @@
 import type {
   ChannelOnboardingAdapter,
-  MoltbotConfig,
+  OpenClawConfig,
   WizardPrompter,
-} from "clawdbot/plugin-sdk";
-import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "clawdbot/plugin-sdk";
+} from "openclaw/plugin-sdk";
+import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "openclaw/plugin-sdk";
 
 import {
   listMezonAccountIds,
@@ -199,7 +199,7 @@ export const mezonOnboardingAdapter: ChannelOnboardingAdapter = {
 
     return { cfg: next, accountId };
   },
-  disable: (cfg: MoltbotConfig) => ({
+  disable: (cfg: OpenClawConfig) => ({
     ...cfg,
     channels: {
       ...cfg.channels,

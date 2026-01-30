@@ -1,4 +1,4 @@
-import type { ChannelGroupContext } from "clawdbot/plugin-sdk";
+import type { ChannelGroupContext } from "openclaw/plugin-sdk";
 
 import { resolveMezonAccount } from "./mezon/accounts.js";
 

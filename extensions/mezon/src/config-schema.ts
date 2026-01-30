@@ -5,7 +5,7 @@ import {
   DmPolicySchema,
   GroupPolicySchema,
   requireOpenAllowFrom,
-} from "clawdbot/plugin-sdk";
+} from "openclaw/plugin-sdk";
 
 const MezonAccountSchemaBase = z
   .object({
