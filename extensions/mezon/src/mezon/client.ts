@@ -90,8 +90,12 @@ export async function loginMezonClient(botClient: MezonBotClient): Promise<void>
   await botClient.client.login();
 }
 
-export async function fetchMezonBotUser(botClient: MezonBotClient): Promise<MezonUser | null> {
+export async function fetchMezonBotUser(
+  botClient: MezonBotClient,
+  botIdHint?: string,
+): Promise<MezonUser | null> {
   try {
+    // Try to access the session from the Mezon SDK client
     const session = (botClient.client as Record<string, unknown>).session as
       | { user_id?: string; username?: string }
       | undefined;
@@ -101,6 +105,26 @@ export async function fetchMezonBotUser(botClient: MezonBotClient): Promise<Mezo
         username: session.username ?? null,
       };
     }
+
+    // Fallback: try to get bot info from the SDK's user property
+    const user = (botClient.client as Record<string, unknown>).user as
+      | { id?: string; username?: string }
+      | undefined;
+    if (user?.id) {
+      return {
+        id: user.id,
+        username: user.username ?? null,
+      };
+    }
+
+    // Final fallback: use the bot ID from the client configuration if provided
+    if (botIdHint?.trim()) {
+      return {
+        id: botIdHint.trim(),
+        username: null,
+      };
+    }
+
     return null;
   } catch {
     return null;

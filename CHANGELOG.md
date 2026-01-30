@@ -29,6 +29,9 @@ Status: stable.
 - Discord: add configurable privileged gateway intents for presences/members. (#2266) Thanks @kentaro.
 - Slack: clear ack reaction after streamed replies. (#2044) Thanks @fancyboi999.
 - Matrix: switch plugin SDK to @vector-im/matrix-bot-sdk.
+- Mezon: add chat integration plugin with DMs, channels, threads, and media support.
+- Mezon: implement echo loop prevention via bot user ID tracking and sent message deduplication.
+- Mezon: add envelope sanitization for web chat history cleanup.
 - Tlon: format thread reply IDs as @ud. (#1837) Thanks @wca4a.
 - Tools: add per-sender group tool policies and fix precedence. (#1757) Thanks @adam91holt.
 - Agents: summarize dropped messages during compaction safeguard pruning. (#2509) Thanks @jogi47.

@@ -5,6 +5,7 @@ import {
   loginMezonClient,
   sendMezonChannelMessage,
   sendMezonDM,
+  type MezonBotClient,
 } from "./client.js";
 
 export type MezonSendOpts = {
@@ -13,6 +14,7 @@ export type MezonSendOpts = {
   mediaUrl?: string;
   replyToId?: string;
   clanId?: string;
+  botClient?: MezonBotClient;
 };
 
 export type MezonSendResult = {
@@ -72,29 +74,39 @@ export async function sendMessageMezon(
 ): Promise<MezonSendResult> {
   const core = getCore();
   const logger = core.logging.getChildLogger({ module: "mezon" });
+  logger.info?.(`[DEBUG] sendMessageMezon called: to=${to} textLength=${text?.length ?? 0} hasExistingClient=${!!opts.botClient}`);
   const cfg = core.config.loadConfig();
   const account = resolveMezonAccount({
     cfg,
     accountId: opts.accountId,
   });
-  const token = opts.token?.trim() || account.token?.trim();
-  if (!token) {
-    throw new Error(
-      `Mezon bot token missing for account "${account.accountId}" (set channels.mezon.accounts.${account.accountId}.token or MEZON_TOKEN for default).`,
-    );
-  }
 
   const target = parseMezonTarget(to);
 
-  const botId = account.botId?.trim();
-  if (!botId) {
-    throw new Error(
-      `Mezon bot ID missing for account "${account.accountId}" (set channels.mezon.accounts.${account.accountId}.botId).`,
-    );
-  }
+  // Use provided botClient if available, otherwise create a new one
+  let botClient: MezonBotClient;
+  if (opts.botClient) {
+    logger.info?.(`[DEBUG] Reusing existing bot client`);
+    botClient = opts.botClient;
+  } else {
+    logger.info?.(`[DEBUG] Creating new bot client and logging in`);
+    const token = opts.token?.trim() || account.token?.trim();
+    if (!token) {
+      throw new Error(
+        `Mezon bot token missing for account "${account.accountId}" (set channels.mezon.accounts.${account.accountId}.token or MEZON_TOKEN for default).`,
+      );
+    }
 
-  const botClient = createMezonBotClient(token, botId);
-  await loginMezonClient(botClient);
+    const botId = account.botId?.trim();
+    if (!botId) {
+      throw new Error(
+        `Mezon bot ID missing for account "${account.accountId}" (set channels.mezon.accounts.${account.accountId}.botId).`,
+      );
+    }
+
+    botClient = createMezonBotClient(token, botId);
+    await loginMezonClient(botClient);
+  }
 
   let message = text?.trim() ?? "";
   const mediaUrl = opts.mediaUrl?.trim();

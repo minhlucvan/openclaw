@@ -53,6 +53,12 @@ const recentInboundMessages = createDedupeCache({
   maxSize: RECENT_MEZON_MESSAGE_MAX,
 });
 
+// Track sent message IDs to prevent echo loop
+const recentSentMessages = createDedupeCache({
+  ttlMs: RECENT_MEZON_MESSAGE_TTL_MS,
+  maxSize: RECENT_MEZON_MESSAGE_MAX,
+});
+
 function resolveRuntime(opts: MonitorMezonOpts): RuntimeEnv {
   return (
     opts.runtime ?? {
@@ -181,10 +187,14 @@ export async function monitorMezonProvider(opts: MonitorMezonOpts = {}): Promise
 
   const botClient = createMezonBotClient(token, botId);
   await loginMezonClient(botClient);
-  const botUser = await fetchMezonBotUser(botClient);
+  const botUser = await fetchMezonBotUser(botClient, botId);
   const botUserId = botUser?.id ?? "";
   const botUsername = botUser?.username?.trim() || undefined;
   runtime.log?.(`mezon connected as ${botUsername ? `@${botUsername}` : botUserId}`);
+  runtime.log?.(`[DEBUG] mezon botUserId="${botUserId}" botUsername="${botUsername ?? ""}"`);
+  if (!botUserId) {
+    runtime.log?.(`[WARNING] mezon bot user ID is empty - self-message filtering will not work!`);
+  }
 
   opts.statusSink?.({
     connected: true,
@@ -250,9 +260,22 @@ export async function monitorMezonProvider(opts: MonitorMezonOpts = {}): Promise
     if (!messageId) return;
     if (recentInboundMessages.check(`${account.accountId}:${messageId}`)) return;
 
+    // Check if this is a message we sent (defensive filter against echo loops)
+    if (recentSentMessages.check(`${account.accountId}:${messageId}`)) {
+      logVerboseMessage(`[DEBUG] Ignoring sent message echo: messageId="${messageId}"`);
+      return;
+    }
+
     const senderId = msg.sender_id;
     if (!senderId) return;
-    if (senderId === botUserId) return;
+    if (senderId === botUserId) {
+      logVerboseMessage(`[DEBUG] Ignoring own message: senderId="${senderId}" matches botUserId="${botUserId}"`);
+      return;
+    }
+    // Extra debug to catch echo loop issue
+    if (!botUserId) {
+      logVerboseMessage(`[WARNING] Received message from senderId="${senderId}" but botUserId is empty - cannot filter self-messages!`);
+    }
 
     // Determine channel kind: DM vs clan channel vs group
     // Mezon mode 4 = DM, else use clan_id presence
@@ -338,7 +361,7 @@ export async function monitorMezonProvider(opts: MonitorMezonOpts = {}): Promise
           );
           if (created) {
             try {
-              await sendMessageMezon(
+              const result = await sendMessageMezon(
                 `user:${senderId}`,
                 core.channel.pairing.buildPairingReply({
                   channel: "mezon",
@@ -347,6 +370,8 @@ export async function monitorMezonProvider(opts: MonitorMezonOpts = {}): Promise
                 }),
                 { accountId: account.accountId },
               );
+              // Track sent message ID to prevent echo loop
+              recentSentMessages.check(`${account.accountId}:${result.messageId}`);
               opts.statusSink?.({ lastOutboundAt: Date.now() });
             } catch (err) {
               logVerboseMessage(
@@ -617,6 +642,7 @@ export async function monitorMezonProvider(opts: MonitorMezonOpts = {}): Promise
         responsePrefixContextProvider: prefixContext.responsePrefixContextProvider,
         humanDelay: core.channel.reply.resolveHumanDelayConfig(cfg, route.agentId),
         deliver: async (payload: ReplyPayload) => {
+          runtime.log?.(`[DEBUG] deliver() called: text length=${payload.text?.length ?? 0} hasMedia=${!!payload.mediaUrl}`);
           const mediaUrls = payload.mediaUrls ?? (payload.mediaUrl ? [payload.mediaUrl] : []);
           const text = core.channel.text.convertMarkdownTables(payload.text ?? "", tableMode);
           if (mediaUrls.length === 0) {
@@ -626,33 +652,43 @@ export async function monitorMezonProvider(opts: MonitorMezonOpts = {}): Promise
               account.accountId,
             );
             const chunks = core.channel.text.chunkMarkdownTextWithMode(text, textLimit, chunkMode);
+            runtime.log?.(`[DEBUG] About to send ${chunks.length > 0 ? chunks.length : 1} chunk(s) to ${to}`);
             for (const chunk of chunks.length > 0 ? chunks : [text]) {
               if (!chunk) continue;
-              await sendMessageMezon(to, chunk, {
+              runtime.log?.(`[DEBUG] Sending chunk (length=${chunk.length}) to ${to}`);
+              const result = await sendMessageMezon(to, chunk, {
                 accountId: account.accountId,
                 replyToId: threadRootId,
+                botClient,
               });
+              // Track sent message ID to prevent echo loop
+              recentSentMessages.check(`${account.accountId}:${result.messageId}`);
+              runtime.log?.(`[DEBUG] Chunk sent successfully, messageId=${result.messageId}`);
             }
           } else {
             let first = true;
             for (const mediaUrl of mediaUrls) {
               const caption = first ? text : "";
               first = false;
-              await sendMessageMezon(to, caption, {
+              const result = await sendMessageMezon(to, caption, {
                 accountId: account.accountId,
                 mediaUrl,
                 replyToId: threadRootId,
+                botClient,
               });
+              // Track sent message ID to prevent echo loop
+              recentSentMessages.check(`${account.accountId}:${result.messageId}`);
             }
           }
-          runtime.log?.(`delivered reply to ${to}`);
+          runtime.log?.(`[DEBUG] delivered reply to ${to}`);
         },
         onError: (err, info) => {
-          runtime.error?.(`mezon ${info.kind} reply failed: ${String(err)}`);
+          runtime.error?.(`[DEBUG] mezon ${info.kind} reply failed: ${String(err)}`);
         },
         onReplyStart: typingCallbacks.onReplyStart,
       });
 
+    runtime.log?.(`[DEBUG] Dispatching reply for message from ${senderId}`);
     await core.channel.reply.dispatchReplyFromConfig({
       ctx: ctxPayload,
       cfg,
@@ -664,6 +700,7 @@ export async function monitorMezonProvider(opts: MonitorMezonOpts = {}): Promise
         onModelSelected: prefixContext.onModelSelected,
       },
     });
+    runtime.log?.(`[DEBUG] Reply dispatch completed for message from ${senderId}`);
     markDispatchIdle();
     if (historyKey) {
       clearHistoryEntriesIfEnabled({ historyMap: channelHistories, historyKey, limit: historyLimit });
@@ -725,6 +762,8 @@ export async function monitorMezonProvider(opts: MonitorMezonOpts = {}): Promise
   // Listen for incoming channel messages via the Mezon SDK event system
   botClient.client.onChannelMessage((data: unknown) => {
     const msg = data as MezonMessage;
+    const contentPreview = typeof msg?.content === 'string' ? msg.content.slice(0, 50) : JSON.stringify(msg?.content).slice(0, 50);
+    runtime.log?.(`[DEBUG] Received message: id=${msg?.message_id} from=${msg?.sender_id} content="${contentPreview}..."`);
     if (!msg || !msg.message_id) return;
     debouncer.enqueue({ msg }).catch((err) => {
       runtime.error?.(`mezon handler failed: ${String(err)}`);

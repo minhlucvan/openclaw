@@ -67,8 +67,8 @@ export const mezonPlugin: ChannelPlugin<ResolvedMezonAccount> = {
   pairing: {
     idLabel: "mezonUserId",
     normalizeAllowEntry: (entry) => normalizeAllowEntry(entry),
-    notifyApproval: async ({ id }) => {
-      console.log(`[mezon] User ${id} approved for pairing`);
+    notifyApproval: async () => {
+      // Pairing approval notification is sent via Mezon message
     },
   },
   capabilities: {
