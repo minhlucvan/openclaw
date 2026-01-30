@@ -6,6 +6,8 @@ Docs: https://docs.openclaw.ai
 
 ### Changes
 
+- Mezon: add Mezon chat integration as extension plugin.
+
 ### Fixes
 
 ## 2026.1.30
@@ -46,7 +48,6 @@ Docs: https://docs.openclaw.ai
 ## 2026.1.29
 
 ### Changes
-
 - Rebrand: rename the npm package/CLI to `openclaw`, add a `openclaw` compatibility shim, and move extensions to the `@openclaw/*` scope.
 - Onboarding: strengthen security warning copy for beta + access control expectations.
 - Onboarding: add Venice API key to non-interactive flow. (#1893) Thanks @jonisjongithub.
